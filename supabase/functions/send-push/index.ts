@@ -211,12 +211,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    let serviceAccount: any;
+    let serviceAccount: FirebaseServiceAccount;
     try {
-      serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
-    } catch {
+      serviceAccount = parseFirebaseServiceAccount(FIREBASE_SERVICE_ACCOUNT);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Firebase credentials are invalid.";
+      console.error("Invalid FIREBASE_SERVICE_ACCOUNT", message);
       return new Response(
-        JSON.stringify({ error: "FIREBASE_SERVICE_ACCOUNT is not valid JSON" }),
+        JSON.stringify({ error: message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
