@@ -322,7 +322,7 @@ export const PlayWithMateProvider = ({ children }: { children: ReactNode }) => {
         clearFlag();
       }
     },
-    [audioElement, currentSong?.audio_url, currentSong?.id, pause, play, playSong, progress, seek],
+    [audioElement, currentSong?.audio_url, currentSong?.id, pause, play, playSong, seek],
   );
 
   const persistSessionState = useCallback(
