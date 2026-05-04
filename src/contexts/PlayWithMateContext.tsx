@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlayer, type Song } from '@/contexts/PlayerContext';
+import { playerProgressStore } from '@/lib/playerProgressStore';
 import { toast } from 'sonner';
 import { triggerHaptic } from '@/hooks/useHaptics';
 
