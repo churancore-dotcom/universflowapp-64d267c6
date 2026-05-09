@@ -156,6 +156,7 @@ const buildStreamProxyUrl = (sourceUrl: string) => {
 
 const isEqProcessingEnabled = () => {
   try {
+    if (localStorage.getItem('uf_audio_fx_allowed') !== '1') return false;
     const raw = localStorage.getItem(EQ_SETTINGS_KEY);
     if (!raw) return false;
 
@@ -496,6 +497,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const isPlayableUrl = useCallback((url?: string) => {
     if (!url) return false;
     if (url === '' || url === 'pending' || url === 'resolving') return false;
+    if (isYouTubeFallbackUrl(url)) return true;
     return url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:');
   }, []);
 

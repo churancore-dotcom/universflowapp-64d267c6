@@ -102,8 +102,8 @@ const EqualizerModal = ({ isOpen, onClose }: EqualizerModalProps) => {
   const [bands, setBandsState] = useState<EQBand[]>(
     saved?.bands ? defaultBands.map((b, i) => ({ ...b, gain: saved.bands[i] ?? 0 })) : defaultBands
   );
-  const [bassBoost, setBassBoost] = useState(saved?.bassBoost ?? 0);
-  const [reverb, setReverb] = useState(saved?.reverb ?? 0);
+  const [bassBoost, setBassBoost] = useState(Math.min(saved?.bassBoost ?? 0, 60));
+  const [reverb, setReverb] = useState(Math.min(saved?.reverb ?? 0, 45));
   const [playbackSpeed, setPlaybackSpeed] = useState(saved?.playbackSpeed ?? 1);
   const [spatialAudio, setSpatialAudio] = useState(saved?.spatialAudio ?? false);
   const [activePreset, setActivePreset] = useState<string>(saved?.activePreset ?? 'flat');
@@ -111,6 +111,7 @@ const EqualizerModal = ({ isOpen, onClose }: EqualizerModalProps) => {
   // Only route through Web Audio while EQ/effects are active. This prevents
   // background/native playback from fighting expensive filters when EQ is off.
   useEffect(() => {
+    if (!isPremium) return;
     if (!audioElement) return;
     const active = hasActiveProcessing({ bands, bassBoost, reverb, playbackSpeed, spatialAudio });
     if (active) {
@@ -124,27 +125,27 @@ const EqualizerModal = ({ isOpen, onClose }: EqualizerModalProps) => {
       engineSetSpatial(false);
       audioElement.playbackRate = 1;
     }
-  }, [audioElement, currentSong?.id, bands, bassBoost, reverb, playbackSpeed, spatialAudio]);
+  }, [isPremium, audioElement, currentSong?.id, bands, bassBoost, reverb, playbackSpeed, spatialAudio]);
 
   // Push EQ band changes to the engine (smoothed, never rebuilds graph)
   useEffect(() => {
-    if (!audioElement || !hasActiveProcessing({ bands, bassBoost, reverb, playbackSpeed, spatialAudio })) return;
+    if (!isPremium || !audioElement || !hasActiveProcessing({ bands, bassBoost, reverb, playbackSpeed, spatialAudio })) return;
     engineResume();
     connectAudioElement(audioElement);
     engineSetBands(bands.map(b => b.gain), bassBoost);
-  }, [bands, bassBoost, audioElement, reverb, playbackSpeed, spatialAudio]);
+  }, [isPremium, bands, bassBoost, audioElement, reverb, playbackSpeed, spatialAudio]);
 
   useEffect(() => {
-    engineSetReverb(reverb);
-  }, [reverb]);
+    if (isPremium) engineSetReverb(reverb);
+  }, [isPremium, reverb]);
 
   useEffect(() => {
-    engineSetSpatial(spatialAudio);
-  }, [spatialAudio]);
+    if (isPremium) engineSetSpatial(spatialAudio);
+  }, [isPremium, spatialAudio]);
 
   useEffect(() => {
-    if (audioElement) audioElement.playbackRate = playbackSpeed;
-  }, [playbackSpeed, audioElement]);
+    if (isPremium && audioElement) audioElement.playbackRate = playbackSpeed;
+  }, [isPremium, playbackSpeed, audioElement]);
 
   // Persist
   useEffect(() => {
@@ -165,7 +166,7 @@ const EqualizerModal = ({ isOpen, onClose }: EqualizerModalProps) => {
 
   const handlePresetSelect = useCallback((preset: Preset) => {
     setBandsState(prev => prev.map((b, i) => ({ ...b, gain: preset.bands[i] ?? 0 })));
-    setBassBoost(preset.bassBoost);
+    setBassBoost(Math.min(preset.bassBoost, 60));
     setActivePreset(preset.id);
     toast.success(`${preset.name} preset applied`);
   }, []);
@@ -188,8 +189,7 @@ const EqualizerModal = ({ isOpen, onClose }: EqualizerModalProps) => {
     return (
       <AnimatePresence>
         <PremiumLockOverlay
-          title="Studio-grade Equalizer"
-          description="Shape every frequency with the 8-band EQ, bass boost, reverb and spatial audio. Available on Premium."
+          title="Equalizer is Premium"
           onClose={onClose}
         />
       </AnimatePresence>
@@ -354,7 +354,7 @@ const EqualizerModal = ({ isOpen, onClose }: EqualizerModalProps) => {
                   <Slider
                     value={[bassBoost]}
                     min={0}
-                    max={100}
+                    max={60}
                     step={5}
                     onValueChange={([value]) => { setBassBoost(value); setActivePreset('custom'); }}
                     className="w-full [&_[role=slider]]:bg-rose-500 [&_[role=slider]]:border-rose-400 [&_[data-radix-slider-range]]:bg-rose-500/60"
@@ -373,7 +373,7 @@ const EqualizerModal = ({ isOpen, onClose }: EqualizerModalProps) => {
                   <Slider
                     value={[reverb]}
                     min={0}
-                    max={100}
+                    max={45}
                     step={5}
                     onValueChange={([value]) => setReverb(value)}
                     className="w-full [&_[role=slider]]:bg-rose-500 [&_[role=slider]]:border-rose-400 [&_[data-radix-slider-range]]:bg-rose-500/60"

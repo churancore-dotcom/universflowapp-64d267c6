@@ -4,6 +4,7 @@ export interface IndexedTrack {
   id: string;
   title: string;
   artist: string;
+  audio_url?: string;
   album?: string;
   cover_url?: string;
   duration?: number;
@@ -28,6 +29,12 @@ interface ResolveTrackResponse {
   cover_url?: string;
   error?: string;
   fallback?: boolean;
+}
+
+interface YoutubeSearchResponse {
+  success: boolean;
+  results?: IndexedTrack[];
+  error?: string;
 }
 
 // ── Persistent stream cache (localStorage + memory) ──
@@ -143,6 +150,19 @@ export async function searchIndexedTracks(query: string, limit = 50): Promise<In
     limit,
   });
   return Array.isArray(data.results) ? data.results : [];
+}
+
+export async function searchYouTubeMusicTracks(query: string, limit = 50): Promise<IndexedTrack[]> {
+  if (!query || query.trim().length < 2) return [];
+  try {
+    const data = await requestFunction<YoutubeSearchResponse>('yt-music-search', {
+      query: query.trim(),
+      limit,
+    });
+    return Array.isArray(data.results) ? data.results : [];
+  } catch {
+    return [];
+  }
 }
 
 // Session-level cache for Global Top tracks so they don't refetch every time
