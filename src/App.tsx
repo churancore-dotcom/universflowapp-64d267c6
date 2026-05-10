@@ -311,7 +311,6 @@ const AppContent = () => {
       <Suspense fallback={null}>
         <DownloadQueuePanel />
         <PWAInstallBanner />
-        <ConnectionTroubleshoot />
       </Suspense>
     </MobileShell>
   );
