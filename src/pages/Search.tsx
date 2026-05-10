@@ -5,6 +5,7 @@ import { usePlayer, Song } from '@/contexts/PlayerContext';
 import { useDownloads } from '@/contexts/DownloadContext';
 import BottomNav from '@/components/BottomNav';
 import LikeButton from '@/components/LikeButton';
+import PinToViralButton from '@/components/PinToViralButton';
 import DownloadButton from '@/components/DownloadButton';
 import { TabTransition } from '@/components/PageTransition';
 import { Input } from '@/components/ui/input';
