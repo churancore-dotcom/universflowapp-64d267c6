@@ -364,9 +364,6 @@ const Home = () => {
               {/* Online-only discovery sections — hidden when offline */}
               {!isOffline && (
                 <>
-                  {/* Auto-generated mixes from listening history */}
-                  <AutoMixSection />
-
                   {/* Artist discovery */}
                   <FeaturedArtistsSection />
 
@@ -375,6 +372,9 @@ const Home = () => {
 
                   {/* Top 30 from your followed artists */}
                   <GlobalTopTracksSection />
+
+                  {/* Auto-generated mixes from listening history */}
+                  <AutoMixSection />
                 </>
               )}
 
