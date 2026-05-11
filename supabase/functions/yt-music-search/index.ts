@@ -174,13 +174,15 @@ serve(async (req) => {
     }
 
     let invResults: SearchResult[] = [];
-    for (const inst of INVIDIOUS_INSTANCES) {
-      try {
-        const u = new URL(`${inst}/api/v1/search`);
-        u.searchParams.set('q', `${cleanQuery} music`);
-        u.searchParams.set('type', 'video');
-        u.searchParams.set('sort_by', sortBy);
-        u.searchParams.set('date', 'year'); // last year only — keeps results fresh
+    const dateWindows = ['year', '']; // fresh first, then all-time for artists with older catalogs
+    for (const dateWindow of dateWindows) {
+      for (const inst of INVIDIOUS_INSTANCES) {
+        try {
+          const u = new URL(`${inst}/api/v1/search`);
+          u.searchParams.set('q', `${cleanQuery} music`);
+          u.searchParams.set('type', 'video');
+          u.searchParams.set('sort_by', sortBy);
+          if (dateWindow) u.searchParams.set('date', dateWindow);
         const ctrl = new AbortController();
         const tm = setTimeout(() => ctrl.abort(), 6000);
         const r = await fetch(u.toString(), { headers: { Accept: 'application/json' }, signal: ctrl.signal });
@@ -213,13 +215,15 @@ serve(async (req) => {
             };
           })
           .filter(Boolean) as SearchResult[];
-        if (invResults.length > 0) {
-          console.log(`Invidious search OK via ${inst}: ${invResults.length} results`);
-          break;
+          if (invResults.length > 0) {
+            console.log(`Invidious search OK via ${inst} (${dateWindow || 'all-time'}): ${invResults.length} results`);
+            break;
+          }
+        } catch (e) {
+          console.warn(`Invidious search failed on ${inst}:`, (e as Error).message);
         }
-      } catch (e) {
-        console.warn(`Invidious search failed on ${inst}:`, (e as Error).message);
       }
+      if (invResults.length > 0) break;
     }
 
     if (invResults.length > 0) {
