@@ -540,13 +540,20 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // cached URL just failed to play (stale Invidious link, expired token, etc).
   const resolveAudioUrl = useCallback(
     async (song: Song, opts: { forceRefresh?: boolean } = {}): Promise<string | null> => {
-      if (!opts.forceRefresh && isPlayableUrl(song.audio_url)) return song.audio_url;
-      if (!song.artist || !song.title) return null;
-      try {
-        const result = await resolveIndexedTrack(song.artist, song.title, opts);
-        if (result?.streamUrl) return result.streamUrl;
-      } catch { /* fall through */ }
-      return null;
+      const ytFallback = isYouTubeFallbackUrl(song.audio_url) ? song.audio_url ?? null : null;
+      // Skip resolution only when we already have a real (non-YT-iframe) URL.
+      if (!opts.forceRefresh && isPlayableUrl(song.audio_url) && !ytFallback) {
+        return song.audio_url!;
+      }
+      if (song.artist && song.title) {
+        try {
+          const result = await resolveIndexedTrack(song.artist, song.title, opts);
+          if (result?.streamUrl) return result.streamUrl;
+        } catch { /* fall through to YT iframe fallback */ }
+      }
+      // Direct stream lookup failed — fall back to the YouTube iframe marker
+      // (the player handles `yt-video:` URLs in playSongAtIndex).
+      return ytFallback;
     },
     [isPlayableUrl],
   );
