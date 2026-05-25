@@ -1089,6 +1089,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // resolves, this seq will be stale and we MUST abort — otherwise the late
     // resolver wins and a different song plays than the one the user tapped.
     const mySeq = ++playRequestSeqRef.current;
+    const intendedIdentity = getSongIdentity(song);
+    activeSongIdentityRef.current = intendedIdentity;
 
     // Cancel any ongoing crossfade and stale preloaded next-track audio
     if (crossfadeIntervalRef.current) {
@@ -1114,7 +1116,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     if (!offlineUrl && !isPlayableUrl(playbackSource)) {
       const resolved = await resolveAudioUrl(song);
-      if (mySeq !== playRequestSeqRef.current) return; // user tapped another song first
+      if (mySeq !== playRequestSeqRef.current || activeSongIdentityRef.current !== intendedIdentity) return; // user tapped another song first
       if (!resolved) {
         setIsPlaying(false);
         toast.error('This song could not start right now.');
@@ -1127,10 +1129,10 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     // Final guard before mutating <audio> — bail if a newer tap has taken over.
-    if (mySeq !== playRequestSeqRef.current) return;
+    if (mySeq !== playRequestSeqRef.current || activeSongIdentityRef.current !== intendedIdentity) return;
 
     const normalizedQueue = songsQueue?.map((queuedSong) =>
-      queuedSong.id === song.id ? { ...queuedSong, audio_url: playbackSource } : queuedSong,
+      getSongIdentity(queuedSong) === intendedIdentity ? { ...queuedSong, audio_url: playbackSource } : queuedSong,
     );
 
     // ── YouTube IFrame fallback path ──
@@ -1169,11 +1171,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // If a queue is provided, use it
     if (normalizedQueue && normalizedQueue.length > 0) {
       setQueueState(normalizedQueue);
-      const songIndex = normalizedQueue.findIndex(s => s.id === song.id);
+      const songIndex = normalizedQueue.findIndex(s => getSongIdentity(s) === intendedIdentity);
       setCurrentIndex(songIndex >= 0 ? songIndex : 0);
     } else {
       // Update queue - add song if not exists
-      const existingIndex = queue.findIndex(s => s.id === song.id);
+      const existingIndex = queue.findIndex(s => getSongIdentity(s) === intendedIdentity);
       if (existingIndex === -1) {
         setQueueState(prev => [...prev, song]);
         setCurrentIndex(queue.length);
